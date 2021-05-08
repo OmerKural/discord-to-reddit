@@ -39,7 +39,6 @@ class KarmaSystem(commands.Cog):
             for k, v in value.items():
                 clean_ranking_data[key] = v
         clean_ranking_data = dict(sorted(clean_ranking_data.items(), reverse=True, key=lambda item: item[1]))
-        print(clean_ranking_data)
         ranking_txt = []
         # Shows at max first ten elements of the rankings.
         for user_id in (clean_ranking_data[:10] if len(clean_ranking_data) > 10 else clean_ranking_data):

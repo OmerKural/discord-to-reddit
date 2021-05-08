@@ -76,14 +76,26 @@ async def on_message(message):
 
 
 @bot.event
-async def on_reaction_add(reaction, user):
-    print(str(reaction))
-    print(get(reaction.message.guild.emojis, name='upvote'))
-    if str(reaction.message.channel.id) == settings['CHANNEL_ID']:
-        if str(reaction) == str(get(reaction.message.guild.emojis, name='upvote')):
-            add_karma(str(reaction.message.guild.id), str(reaction.message.author.id), 1)
-        if str(reaction) == str(get(reaction.message.guild.emojis, name='downvote')):
-            subtract_karma(str(reaction.message.guild.id), str(reaction.message.author.id), 1)
+async def on_raw_reaction_add(payload):
+    guild_object = bot.get_guild(payload.guild_id)
+    if str(payload.channel_id) == settings['CHANNEL_ID']:
+        if str(payload.emoji) == str(get(guild_object.emojis, name='upvote')):
+            add_karma(str(payload.guild_id), str(payload.user_id), 1)
+        if str(payload.emoji) == str(get(guild_object.emojis, name='downvote')):
+            subtract_karma(str(payload.guild_id), str(payload.user_id), 1)
+
+        with open('karma_data.json', 'w') as data_file:
+            json.dump(data, data_file)
+
+# [ANTI CHEAT] Prevents users from abusing the upvote AND downvote buttons by spamming them. 
+@bot.event
+async def on_raw_reaction_remove(payload):
+    guild_object = bot.get_guild(payload.guild_id)
+    if str(payload.channel_id) == settings['CHANNEL_ID']:
+        if str(payload.emoji) == str(get(guild_object.emojis, name='upvote')):
+            subtract_karma(str(payload.guild_id), str(payload.user_id), 1)
+        if str(payload.emoji) == str(get(guild_object.emojis, name='downvote')):
+            add_karma(str(payload.guild_id), str(payload.user_id), 1)
 
         with open('karma_data.json', 'w') as data_file:
             json.dump(data, data_file)
