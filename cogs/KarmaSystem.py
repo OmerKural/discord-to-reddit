@@ -111,13 +111,13 @@ class KarmaSystem(commands.Cog):
             data = json.load(data_file)
             if award_name.lower() == 'silver' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 25:
                 await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_silver'))
-                self.add_karma(str(ctx.guild.id), str(ctx.message.author.id), 5)
+                self.add_karma(str(ctx.guild.id), str(ctx.message.reference.resolved.author.id), 5)
             elif award_name.lower() == 'gold' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 50:
                 await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_gold'))
-                self.add_karma(str(ctx.guild.id), str(ctx.message.author.id), 10)
+                self.add_karma(str(ctx.guild.id), str(ctx.message.reference.resolved.author.id), 10)
             elif award_name.lower() == 'platinum' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 100:
                 await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_platinum'))
-                self.add_karma(str(ctx.guild.id), str(ctx.message.author.id), 20)
+                self.add_karma(str(ctx.guild.id), str(ctx.message.reference.resolved.author.id), 20)
 
     @commands.Cog.listener()
     async def on_message(self, message):
