@@ -20,7 +20,4 @@ with open('bot_settings.json', 'r') as settings_file:
 async def on_ready():
     print('Bot is running...')
 
-
-
-
 bot.run(settings['TOKEN'])
