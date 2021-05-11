@@ -24,8 +24,31 @@ class KarmaSystem(commands.Cog):
             except json.decoder.JSONDecodeError as e:
                 self.data = {}
         
+    def add_karma(self, guild_id, user_id, count):
+        if not guild_id in self.data:
+            self.data[guild_id] = {}
+        if not user_id in self.data[guild_id]:
+            self.data[guild_id][user_id] = 0
+        self.data[guild_id][user_id] += count
+        with open('karma_data.json', 'r+') as data_file:
+            json.dump(self.data, data_file)
+        
+    def subtract_karma(self, guild_id, user_id, count):
+        if not guild_id in self.data:
+            self.data[guild_id] = {}
+        if not user_id in self.data[guild_id]:
+            self.data[guild_id][user_id] = 0
+        self.data[guild_id][user_id] -= count
+        with open('karma_data.json', 'w') as data_file:
+            json.dump(self.data, data_file)
 
-
+    def is_URL(self, text):
+        try:
+            response = requests.get(text)
+            return True
+        except:
+            return False
+        
     @commands.command(name='setup')
     async def setup(self, ctx, channel: discord.TextChannel):
         "Set the channel for the bot to be active in (the channel must be tagged). Usage: r!setup [channel]"
@@ -74,7 +97,11 @@ class KarmaSystem(commands.Cog):
         except KeyError:
             data[server_id][author_id] = 0
             await ctx.send(f"You have **{data[server_id][author_id]}** karma.")
-
+    
+    # Award point system:
+    # Silver = +5
+    # Gold = +10
+    # Platinum = +20
     @commands.command(name='award')
     async def award(self, ctx, award_name):
         """User must have 25 karma points to award a silver, 50 for gold and 100 for platinum. Reply to the message you want to award.
@@ -84,38 +111,13 @@ class KarmaSystem(commands.Cog):
             data = json.load(data_file)
             if award_name.lower() == 'silver' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 25:
                 await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_silver'))
+                self.add_karma(str(ctx.guild.id), str(ctx.message.author.id), 5)
             elif award_name.lower() == 'gold' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 50:
                 await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_gold'))
+                self.add_karma(str(ctx.guild.id), str(ctx.message.author.id), 10)
             elif award_name.lower() == 'platinum' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 100:
                 await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_platinum'))
-
-    # Useful functions
-    def add_karma(self, guild_id, user_id, count):
-        if not guild_id in self.data:
-            self.data[guild_id] = {}
-        if not user_id in self.data[guild_id]:
-            self.data[guild_id][user_id] = 0
-        self.data[guild_id][user_id] += count
-        with open('karma_data.json', 'r+') as data_file:
-            json.dump(self.data, data_file)
-        
-
-    def subtract_karma(self, guild_id, user_id, count):
-        if not guild_id in self.data:
-            self.data[guild_id] = {}
-        if not user_id in self.data[guild_id]:
-            self.data[guild_id][user_id] = 0
-        self.data[guild_id][user_id] -= count
-        with open('karma_data.json', 'w') as data_file:
-            json.dump(self.data, data_file)
-        
-
-    def is_URL(self, text):
-        try:
-            response = requests.get(text)
-            return True
-        except:
-            return False
+                self.add_karma(str(ctx.guild.id), str(ctx.message.author.id), 20)
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -134,9 +136,6 @@ class KarmaSystem(commands.Cog):
     # Karma point system:
     # Upvote = +1
     # Downvote = -1
-    # Silver = +5
-    # Gold = +10
-    # Platinum = +20
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         guild_object = self.bot.get_guild(payload.guild_id)
@@ -152,17 +151,11 @@ class KarmaSystem(commands.Cog):
                 self.add_karma(str(payload.guild_id), str(message_object.author.id), 1)
             if str(payload.emoji) == str(get(guild_object.emojis, name='downvote')):
                 self.subtract_karma(str(payload.guild_id), str(message_object.author.id), 1)
-            if str(payload.emoji) == str(get(guild_object.emojis, name='reddit_silver')):
-                self.add_karma(str(payload.guild_id), str(message_object.author.id), 5)
-            if str(payload.emoji) == str(get(guild_object.emojis, name='reddit_gold')):
-                self.add_karma(str(payload.guild_id), str(message_object.author.id), 10)
-            if str(payload.emoji) == str(get(guild_object.emojis, name='reddit_platinum')):
-                self.add_karma(str(payload.guild_id), str(message_object.author.id), 20)
 
             with open('karma_data.json', 'w') as data_file:
                 json.dump(self.data, data_file)
 
-    # [ANTI CHEAT] Prevents users from abusing the upvote, downvote buttons and awards by spamming them.
+    # [ANTI CHEAT] Prevents users from abusing the upvote and downvote buttons spamming them.
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
         guild_object = self.bot.get_guild(payload.guild_id)
@@ -173,12 +166,6 @@ class KarmaSystem(commands.Cog):
                 self.subtract_karma(str(payload.guild_id), str(message_object.author.id), 1)
             if str(payload.emoji) == str(get(guild_object.emojis, name='downvote')):
                 self.add_karma(str(payload.guild_id), str(message_object.author.id), 1)
-            if str(payload.emoji) == str(get(guild_object.emojis, name='reddit_silver')):
-                self.subtract_karma(str(payload.guild_id), str(message_object.author.id), 5)
-            if str(payload.emoji) == str(get(guild_object.emojis, name='reddit_gold')):
-                self.subtract_karma(str(payload.guild_id), str(message_object.author.id), 10)
-            if str(payload.emoji) == str(get(guild_object.emojis, name='reddit_platinum')):
-                self.subtract_karma(str(payload.guild_id), str(message_object.author.id), 20)
 
             with open('karma_data.json', 'w') as data_file:
                 json.dump(self.data, data_file)
