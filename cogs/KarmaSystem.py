@@ -103,21 +103,33 @@ class KarmaSystem(commands.Cog):
     # Gold = +10
     # Platinum = +20
     @commands.command(name='award')
-    async def award(self, ctx, award_name):
+    async def award(self, ctx, award):
         """User must have 25 karma points to award a silver, 50 for gold and 100 for platinum. Reply to the message you want to award.
          \nAward name can be: silver, gold, platinum. 
          \nGetting an award adds karma points to your account: 5 for silver, 10 for gold, 20 for platinum."""
+        replied_message_object = ctx.message.reference.resolved
         with open('karma_data.json', 'r') as data_file:
             data = json.load(data_file)
-            if award_name.lower() == 'silver' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 25:
-                await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_silver'))
-                self.add_karma(str(ctx.guild.id), str(ctx.message.reference.resolved.author.id), 5)
-            elif award_name.lower() == 'gold' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 50:
-                await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_gold'))
-                self.add_karma(str(ctx.guild.id), str(ctx.message.reference.resolved.author.id), 10)
-            elif award_name.lower() == 'platinum' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 100:
-                await ctx.message.reference.resolved.add_reaction(get(ctx.guild.emojis, name='reddit_platinum'))
-                self.add_karma(str(ctx.guild.id), str(ctx.message.reference.resolved.author.id), 20)
+            if award.lower() == 'silver' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 25:
+                award_name = 'reddit_silver'
+                await replied_message_object.add_reaction(get(ctx.guild.emojis, name=award_name))
+                self.add_karma(str(ctx.guild.id), str(replied_message_object.author.id), 5)
+            elif award.lower() == 'gold' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 50:
+                award_name = 'reddit_gold'
+                await replied_message_object.add_reaction(get(ctx.guild.emojis, name=award_name))
+                self.add_karma(str(ctx.guild.id), str(replied_message_object.author.id), 10)
+            elif award.lower() == 'platinum' and data[str(ctx.guild.id)][str(ctx.author.id)] >= 100:
+                award_name = 'reddit_platinum'
+                await replied_message_object.add_reaction(get(ctx.guild.emojis, name=award_name))
+                self.add_karma(str(ctx.guild.id), str(replied_message_object.author.id), 20)
+            try:
+                await ctx.message.delete()
+            except discord.errors.NotFound:
+                pass
+            await ctx.channel.send(embed=discord.Embed(
+                description=f"**{ctx.message.author.name}** awarded **{replied_message_object.author.name}** a {get(ctx.guild.emojis, name=award_name)}",
+                color=0xff5600
+                ))
 
     @commands.Cog.listener()
     async def on_message(self, message):
